@@ -27,7 +27,7 @@ app.use(express.json());
 // FEEDS RSS VERIFICADOS QUE FUNCIONAN
 // ==========================================
 const RSS_FEEDS = [
-  // INTERNACIONAL (2 fuentes - LAS MÁS CONFIABLES)
+  // INTERNACIONAL (3 fuentes - LAS MÁS CONFIABLES)
   { 
     name: 'BBC News', 
     url: 'http://feeds.bbci.co.uk/news/rss.xml', 
@@ -37,6 +37,40 @@ const RSS_FEEDS = [
     name: 'Reuters', 
     url: 'http://feeds.reuters.com/reuters/topNews', 
     cat: 'internacional'
+  },
+  { 
+    name: 'Al Jazeera', 
+    url: 'https://www.aljazeera.com/xml/rss/all.xml', 
+    cat: 'internacional'
+  },
+  
+  // ESPAÑA (3 fuentes alternativas - MÁS CONFIABLES)
+  { 
+    name: 'RTVE Noticias', 
+    url: 'https://www.rtve.es/api/noticias.rss', 
+    cat: 'españa'
+  },
+  { 
+    name: '20 Minutos', 
+    url: 'https://www.20minutos.es/rss/', 
+    cat: 'españa'
+  },
+  { 
+    name: 'El Confidencial', 
+    url: 'https://rss.elconfidencial.com/espana/', 
+    cat: 'españa'
+  },
+  
+  // GUIPÚZCOA (2 fuentes - Noticias Vascas)
+  { 
+    name: 'EITB Noticias', 
+    url: 'https://www.eitb.eus/es/rss/radio/radio-vitoria/programas/boulevard/detalle/4838058/rss-boulevard/', 
+    cat: 'guipuzcoa'
+  },
+  { 
+    name: 'Noticias de Álava', 
+    url: 'https://www.noticiasdealava.eus/rss/portada.xml', 
+    cat: 'guipuzcoa'
   },
   
   // TECNOLOGÍA (3 fuentes - MUY CONFIABLES)
@@ -56,10 +90,15 @@ const RSS_FEEDS = [
     cat: 'tecnologia'
   },
   
-  // CULTURA (1 fuente - CONFIABLE)
+  // CULTURA (2 fuentes - CONFIABLES)
   { 
     name: 'The Guardian Culture', 
     url: 'https://www.theguardian.com/culture/rss', 
+    cat: 'cultura'
+  },
+  { 
+    name: 'El País Cultura', 
+    url: 'https://feeds.elpais.com/mrss-s/pages/ep/site/elpais.com/section/cultura/portada', 
     cat: 'cultura'
   }
 ];

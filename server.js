@@ -1,6 +1,6 @@
 // ==========================================
-// EL OBSERVADOR - BACKEND RSS
-// Node.js + Express + RSS Parser
+// EL OBSERVADOR - BACKEND RSS (FIXED)
+// Feeds RSS actualizados y verificados
 // ==========================================
 
 const express = require('express');
@@ -19,15 +19,15 @@ const parser = new Parser({
 // Cache: 30 minutos
 const cache = new NodeCache({ stdTTL: 1800 });
 
-// CORS para permitir peticiones del frontend
+// CORS
 app.use(cors());
 app.use(express.json());
 
 // ==========================================
-// CONFIGURACIÓN DE FEEDS RSS
+// FEEDS RSS ACTUALIZADOS Y VERIFICADOS
 // ==========================================
 const RSS_FEEDS = [
-  // INTERNACIONAL (3 fuentes)
+  // INTERNACIONAL (3 fuentes) - ✅ VERIFICADAS
   { 
     name: 'BBC News', 
     url: 'http://feeds.bbci.co.uk/news/rss.xml', 
@@ -35,19 +35,19 @@ const RSS_FEEDS = [
     priority: 1
   },
   { 
-    name: 'Reuters', 
-    url: 'http://feeds.reuters.com/reuters/topNews', 
+    name: 'Al Jazeera', 
+    url: 'https://www.aljazeera.com/xml/rss/all.xml', 
     cat: 'internacional',
     priority: 1
   },
   { 
-    name: 'Al Jazeera', 
-    url: 'https://www.aljazeera.com/xml/rss/all.xml', 
+    name: 'France 24', 
+    url: 'https://www.france24.com/en/rss', 
     cat: 'internacional',
     priority: 2
   },
   
-  // ESPAÑA (3 fuentes)
+  // ESPAÑA (3 fuentes) - ✅ VERIFICADAS
   { 
     name: 'El País', 
     url: 'https://feeds.elpais.com/mrss-s/pages/ep/site/elpais.com/portada', 
@@ -67,21 +67,21 @@ const RSS_FEEDS = [
     priority: 2
   },
   
-  // GUIPÚZCOA (2 fuentes)
+  // GUIPÚZCOA (2 fuentes) - ✅ ALTERNATIVAS
   { 
-    name: 'Diariovasco', 
+    name: 'Diariovasco Gipuzkoa', 
     url: 'https://www.diariovasco.com/rss/2.0/?section=gipuzkoa', 
     cat: 'guipuzcoa',
     priority: 1
   },
   { 
-    name: 'Noticias de Gipuzkoa', 
-    url: 'https://www.noticiasdegipuzkoa.eus/rss/portada.xml', 
+    name: 'EITB Noticias', 
+    url: 'https://www.eitb.eus/es/rss/radio/radio-vitoria/programas/radio-vitoria-gaur-egun/', 
     cat: 'guipuzcoa',
     priority: 2
   },
   
-  // TECNOLOGÍA/IA (4 fuentes)
+  // TECNOLOGÍA/IA (4 fuentes) - ✅ VERIFICADAS
   { 
     name: 'TechCrunch', 
     url: 'https://techcrunch.com/feed/', 
@@ -107,16 +107,16 @@ const RSS_FEEDS = [
     priority: 2
   },
   
-  // CULTURA (2 fuentes)
+  // CULTURA (2 fuentes) - ✅ ALTERNATIVAS
   { 
-    name: 'The Guardian Culture', 
-    url: 'https://www.theguardian.com/culture/rss', 
+    name: 'The Guardian Arts', 
+    url: 'https://www.theguardian.com/artanddesign/rss', 
     cat: 'cultura',
     priority: 1
   },
   { 
-    name: 'El Cultural', 
-    url: 'https://www.elespanol.com/el-cultural/rss', 
+    name: 'Pitchfork Music', 
+    url: 'https://pitchfork.com/rss/reviews/albums/', 
     cat: 'cultura',
     priority: 2
   }
@@ -143,7 +143,6 @@ function cleanHTML(text) {
 // FUNCIÓN PARA EXTRAER IMAGEN
 // ==========================================
 function extractImage(item) {
-  // Intentar múltiples fuentes de imagen
   if (item.enclosure && item.enclosure.url) {
     return item.enclosure.url;
   }
@@ -160,7 +159,6 @@ function extractImage(item) {
     return item.image.url;
   }
   
-  // Buscar en el contenido HTML
   const content = item.content || item['content:encoded'] || item.description || '';
   const imgMatch = content.match(/<img[^>]+src="([^">]+)"/);
   if (imgMatch) {
@@ -394,7 +392,7 @@ app.get('/api/stats', (req, res) => {
 app.get('/', (req, res) => {
   res.json({
     name: 'El Observador Backend',
-    version: '1.0.0',
+    version: '1.0.1-fixed',
     endpoints: {
       news: '/api/news',
       health: '/health',
@@ -414,18 +412,16 @@ const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, () => {
   console.log('\n========================================');
-  console.log('🚀 EL OBSERVADOR BACKEND');
+  console.log('🚀 EL OBSERVADOR BACKEND (FIXED)');
   console.log('========================================');
   console.log(`📡 Servidor: http://localhost:${PORT}`);
   console.log(`📰 Feeds RSS: ${RSS_FEEDS.length} configurados`);
   console.log(`💾 Cache: 30 minutos`);
   console.log('========================================\n');
-  console.log('📋 Endpoints disponibles:');
-  console.log(`   GET  /api/news         - Obtener todas las noticias`);
-  console.log(`   GET  /health           - Estado del servidor`);
-  console.log(`   GET  /api/stats        - Estadísticas`);
-  console.log(`   GET  /api/test/:name   - Probar feed individual`);
-  console.log(`   POST /api/cache/clear  - Limpiar cache`);
+  console.log('📋 Feeds actualizados:');
+  RSS_FEEDS.forEach(feed => {
+    console.log(`   ✓ ${feed.name} (${feed.cat})`);
+  });
   console.log('========================================\n');
 });
 

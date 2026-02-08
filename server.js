@@ -1,6 +1,6 @@
 // ==========================================
-// EL OBSERVADOR - BACKEND RSS (FIXED)
-// Feeds RSS actualizados y verificados
+// EL OBSERVADOR - BACKEND RSS SIMPLIFICADO
+// Solo feeds RSS verificados y confiables
 // ==========================================
 
 const express = require('express');
@@ -19,108 +19,59 @@ const parser = new Parser({
 // Cache: 30 minutos
 const cache = new NodeCache({ stdTTL: 1800 });
 
-// CORS
+// CORS para permitir peticiones del frontend
 app.use(cors());
 app.use(express.json());
 
 // ==========================================
-// FEEDS RSS ACTUALIZADOS Y VERIFICADOS
+// FEEDS RSS VERIFICADOS QUE FUNCIONAN
 // ==========================================
 const RSS_FEEDS = [
-  // INTERNACIONAL (3 fuentes) - ✅ VERIFICADAS
+  // INTERNACIONAL (2 fuentes - LAS MÁS CONFIABLES)
   { 
     name: 'BBC News', 
     url: 'http://feeds.bbci.co.uk/news/rss.xml', 
-    cat: 'internacional',
-    priority: 1
+    cat: 'internacional'
   },
   { 
-    name: 'Al Jazeera', 
-    url: 'https://www.aljazeera.com/xml/rss/all.xml', 
-    cat: 'internacional',
-    priority: 1
-  },
-  { 
-    name: 'France 24', 
-    url: 'https://www.france24.com/en/rss', 
-    cat: 'internacional',
-    priority: 2
+    name: 'Reuters', 
+    url: 'http://feeds.reuters.com/reuters/topNews', 
+    cat: 'internacional'
   },
   
-  // ESPAÑA (3 fuentes) - ✅ VERIFICADAS
-  { 
-    name: 'El País', 
-    url: 'https://feeds.elpais.com/mrss-s/pages/ep/site/elpais.com/portada', 
-    cat: 'españa',
-    priority: 1
-  },
-  { 
-    name: 'El Mundo', 
-    url: 'https://e00-elmundo.uecdn.es/elmundo/rss/portada.xml', 
-    cat: 'españa',
-    priority: 1
-  },
-  { 
-    name: '20 Minutos', 
-    url: 'https://www.20minutos.es/rss/', 
-    cat: 'españa',
-    priority: 2
-  },
-  
-  // GUIPÚZCOA (2 fuentes) - ✅ ALTERNATIVAS
-  { 
-    name: 'Diariovasco Gipuzkoa', 
-    url: 'https://www.diariovasco.com/rss/2.0/?section=gipuzkoa', 
-    cat: 'guipuzcoa',
-    priority: 1
-  },
-  { 
-    name: 'EITB Noticias', 
-    url: 'https://www.eitb.eus/es/rss/radio/radio-vitoria/programas/radio-vitoria-gaur-egun/', 
-    cat: 'guipuzcoa',
-    priority: 2
-  },
-  
-  // TECNOLOGÍA/IA (4 fuentes) - ✅ VERIFICADAS
+  // TECNOLOGÍA (3 fuentes - MUY CONFIABLES)
   { 
     name: 'TechCrunch', 
     url: 'https://techcrunch.com/feed/', 
-    cat: 'tecnologia',
-    priority: 1
+    cat: 'tecnologia'
   },
   { 
     name: 'The Verge', 
     url: 'https://www.theverge.com/rss/index.xml', 
-    cat: 'tecnologia',
-    priority: 1
-  },
-  { 
-    name: 'Wired', 
-    url: 'https://www.wired.com/feed/rss', 
-    cat: 'tecnologia',
-    priority: 2
+    cat: 'tecnologia'
   },
   { 
     name: 'Ars Technica', 
     url: 'https://feeds.arstechnica.com/arstechnica/index', 
-    cat: 'tecnologia',
-    priority: 2
+    cat: 'tecnologia'
   },
   
-  // CULTURA (2 fuentes) - ✅ ALTERNATIVAS
+  // CULTURA (1 fuente - CONFIABLE)
   { 
-    name: 'The Guardian Arts', 
-    url: 'https://www.theguardian.com/artanddesign/rss', 
-    cat: 'cultura',
-    priority: 1
-  },
-  { 
-    name: 'Pitchfork Music', 
-    url: 'https://pitchfork.com/rss/reviews/albums/', 
-    cat: 'cultura',
-    priority: 2
+    name: 'The Guardian Culture', 
+    url: 'https://www.theguardian.com/culture/rss', 
+    cat: 'cultura'
   }
 ];
+
+console.log('\n========================================');
+console.log('📰 FEEDS RSS CONFIGURADOS:');
+console.log('========================================');
+RSS_FEEDS.forEach((feed, i) => {
+  console.log(`${i + 1}. ${feed.name} (${feed.cat})`);
+});
+console.log(`\n✅ Total: ${RSS_FEEDS.length} fuentes verificadas`);
+console.log('========================================\n');
 
 // ==========================================
 // FUNCIÓN PARA LIMPIAR HTML
@@ -143,22 +94,26 @@ function cleanHTML(text) {
 // FUNCIÓN PARA EXTRAER IMAGEN
 // ==========================================
 function extractImage(item) {
+  // Intentar múltiples fuentes de imagen
   if (item.enclosure && item.enclosure.url) {
     return item.enclosure.url;
   }
   
-  if (item['media:thumbnail'] && item['media:thumbnail'].$) {
-    return item['media:thumbnail'].$.url;
+  if (item['media:thumbnail']) {
+    if (item['media:thumbnail'].$) return item['media:thumbnail'].$.url;
+    if (item['media:thumbnail'].url) return item['media:thumbnail'].url;
   }
   
-  if (item['media:content'] && item['media:content'].$) {
-    return item['media:content'].$.url;
+  if (item['media:content']) {
+    if (item['media:content'].$) return item['media:content'].$.url;
+    if (item['media:content'].url) return item['media:content'].url;
   }
   
   if (item.image && item.image.url) {
     return item.image.url;
   }
   
+  // Buscar en el contenido HTML
   const content = item.content || item['content:encoded'] || item.description || '';
   const imgMatch = content.match(/<img[^>]+src="([^">]+)"/);
   if (imgMatch) {
@@ -173,11 +128,11 @@ function extractImage(item) {
 // ==========================================
 async function fetchFeed(feed) {
   try {
-    console.log(`[${feed.name}] Obteniendo feed...`);
+    console.log(`[${feed.name}] 📡 Obteniendo feed...`);
     
     const rssFeed = await parser.parseURL(feed.url);
     
-    const items = rssFeed.items.slice(0, 10).map(item => {
+    const items = rssFeed.items.slice(0, 15).map(item => {
       const title = cleanHTML(item.title || 'Sin título');
       const description = cleanHTML(
         item.contentSnippet || 
@@ -185,10 +140,10 @@ async function fetchFeed(feed) {
         item.description || 
         item.summary || 
         ''
-      ).substring(0, 400);
+      ).substring(0, 500);
       
       return {
-        id: `${feed.name}-${item.guid || item.link || Math.random()}`,
+        id: `${feed.name}-${item.guid || item.link || Math.random().toString(36)}`,
         title: title.substring(0, 200),
         summary: description || 'Sin descripción disponible',
         source: feed.name,
@@ -205,7 +160,7 @@ async function fetchFeed(feed) {
     return items;
     
   } catch (error) {
-    console.error(`[${feed.name}] ❌ Error:`, error.message);
+    console.error(`[${feed.name}] ❌ Error: ${error.message}`);
     return [];
   }
 }
@@ -217,12 +172,14 @@ app.get('/api/news', async (req, res) => {
   try {
     console.log('\n========================================');
     console.log('📡 Nueva petición de noticias');
+    console.log(`Hora: ${new Date().toLocaleString('es-ES')}`);
     console.log('========================================');
     
     // Verificar cache
     const cached = cache.get('all-news');
     if (cached) {
-      console.log('✅ Devolviendo desde CACHE');
+      console.log('✅ Devolviendo desde CACHE (30 min)');
+      console.log(`Noticias en cache: ${cached.length}`);
       return res.json({
         success: true,
         data: cached,
@@ -233,7 +190,7 @@ app.get('/api/news', async (req, res) => {
       });
     }
     
-    console.log(`🔄 Obteniendo ${RSS_FEEDS.length} feeds RSS...`);
+    console.log(`🔄 Obteniendo ${RSS_FEEDS.length} feeds RSS frescos...`);
     
     // Obtener todos los feeds en paralelo
     const startTime = Date.now();
@@ -295,7 +252,7 @@ app.get('/health', (req, res) => {
   const cacheStats = cache.getStats();
   res.json({
     status: 'ok',
-    uptime: process.uptime(),
+    uptime: Math.floor(process.uptime()),
     cache: {
       keys: cache.keys().length,
       hits: cacheStats.hits,
@@ -311,9 +268,9 @@ app.get('/health', (req, res) => {
 // ==========================================
 app.get('/api/test/:feedName', async (req, res) => {
   try {
-    const feedName = req.params.feedName;
+    const feedName = req.params.feedName.toLowerCase().replace(/-/g, ' ');
     const feed = RSS_FEEDS.find(f => 
-      f.name.toLowerCase().replace(/\s+/g, '-') === feedName.toLowerCase()
+      f.name.toLowerCase() === feedName
     );
     
     if (!feed) {
@@ -350,6 +307,7 @@ app.get('/api/test/:feedName', async (req, res) => {
 // ==========================================
 app.post('/api/cache/clear', (req, res) => {
   cache.flushAll();
+  console.log('🗑️  Cache limpiada manualmente');
   res.json({
     success: true,
     message: 'Cache limpiada',
@@ -392,16 +350,17 @@ app.get('/api/stats', (req, res) => {
 app.get('/', (req, res) => {
   res.json({
     name: 'El Observador Backend',
-    version: '1.0.1-fixed',
-    endpoints: {
-      news: '/api/news',
-      health: '/health',
-      stats: '/api/stats',
-      test: '/api/test/:feedName',
-      clearCache: '/api/cache/clear (POST)'
-    },
+    version: '1.0.0 - Simplificado',
+    status: 'running',
     feeds: RSS_FEEDS.length,
-    status: 'running'
+    sources: RSS_FEEDS.map(f => ({ name: f.name, category: f.cat })),
+    endpoints: {
+      news: 'GET /api/news',
+      health: 'GET /health',
+      stats: 'GET /api/stats',
+      test: 'GET /api/test/:feedName',
+      clearCache: 'POST /api/cache/clear'
+    }
   });
 });
 
@@ -412,16 +371,21 @@ const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, () => {
   console.log('\n========================================');
-  console.log('🚀 EL OBSERVADOR BACKEND (FIXED)');
+  console.log('🚀 EL OBSERVADOR BACKEND - SIMPLIFICADO');
   console.log('========================================');
   console.log(`📡 Servidor: http://localhost:${PORT}`);
-  console.log(`📰 Feeds RSS: ${RSS_FEEDS.length} configurados`);
+  console.log(`📰 Feeds RSS: ${RSS_FEEDS.length} fuentes verificadas`);
   console.log(`💾 Cache: 30 minutos`);
   console.log('========================================\n');
-  console.log('📋 Feeds actualizados:');
-  RSS_FEEDS.forEach(feed => {
-    console.log(`   ✓ ${feed.name} (${feed.cat})`);
+  console.log('📋 Feeds activos:');
+  RSS_FEEDS.forEach((feed, i) => {
+    console.log(`   ${i + 1}. ${feed.name} (${feed.cat})`);
   });
+  console.log('\n========================================');
+  console.log('🌐 Endpoints:');
+  console.log(`   GET  ${PORT === 3000 ? 'http://localhost:3000' : ''}/api/news`);
+  console.log(`   GET  ${PORT === 3000 ? 'http://localhost:3000' : ''}/health`);
+  console.log(`   GET  ${PORT === 3000 ? 'http://localhost:3000' : ''}/api/stats`);
   console.log('========================================\n');
 });
 
